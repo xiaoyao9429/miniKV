@@ -1,0 +1,13 @@
+# 这是一行注释
+; 这也是注释行
+
+# 空行（上面/下面都是）
+name=Tom Lee  ; 行尾注释（注：当前解析逻辑只处理行首注释，行尾会被包含到value，用于测试）
+age = 20      
+path=/a=b/c=d  # 多=号场景
+
+
+  addr =  Beijing 100000  ; 首尾空白+value含空格
+
+  fdsffs
+invalid_key*=123  ; 非法key（含*，加载时会被跳过）
