@@ -28,7 +28,7 @@ int mk_destroy(mk_t *mk) {
     if (mk == NULL) {
         fprintf(stderr,"mk_destroy 无效的参数\n");
         return -1;
-    }return 0;
+    }
     // 遍历哈希桶，释放链表
     for (int i = 0; i < MK_HASH_SIZE; i++) {
         mk_destroy_chain(mk->buckets[i]);//逐个销毁Hash桶的链
@@ -53,15 +53,22 @@ mk_node_t* mk_find_node(const mk_t *mk, const char *key) {
     if (mk == NULL || key == NULL) return NULL;
     //去除key两边的空格
    char * validKey=mk_trim(key);
+    if (validKey == NULL) {
+        perror("mk_find_node 内存分配失败");
+        return NULL;//内存分配失败
+    }
+    // 校验key合法性
     size_t idx = mk_hash(validKey);
     mk_node_t *node = mk->buckets[idx];
     while (node != NULL) {
         if (strcmp(node->key, validKey) == 0) {
-            return node;
+            free(validKey);
+            return node;//找到节点，返回节点指针
         }
         node = node->next;
     }
-    return NULL;
+    free(validKey);
+    return NULL;//未找到节点
 }
 
 // 设置/覆盖key的value
@@ -74,11 +81,16 @@ int mk_put(mk_t *mk, const char *key, const char *value) {//todo
 
   //去除key两边的空格
    char * validKey=mk_trim(key);//如果key两边有空格也判定为合法
+   if (validKey == NULL) {
+        perror("mk_put 内存分配失败");
+        return -1;
+   }
 
     // 校验key合法性
    int check =mk_is_valid_key(validKey);//判断key的合法性
    if(check!=0){//key不合法
         fprintf(stderr, "mk_put 非法的key! ❌\n");
+        free(validKey);
         return check;
    }
 
@@ -95,10 +107,12 @@ int mk_put(mk_t *mk, const char *key, const char *value) {//todo
         char *new_val = strdup(val);
         if (new_val == NULL) {
             perror("mk_put 内存分配失败");
+            free(validKey);
             return -1;
         }
         free(node->value);
         node->value = new_val;
+        free(validKey);
         return 0;
     }
 
@@ -106,6 +120,7 @@ int mk_put(mk_t *mk, const char *key, const char *value) {//todo
     node = malloc(sizeof(mk_node_t));
     if (node == NULL) {
         perror("mk_put 内存分配失败");
+        free(validKey);
         return -1;
     }
     node->next = NULL;
@@ -117,6 +132,7 @@ int mk_put(mk_t *mk, const char *key, const char *value) {//todo
         free(node->key);
         free(node->value);
         free(node);
+        free(validKey);
         perror("mk_put 内存分配失败");
         return -1;
     }
@@ -126,7 +142,7 @@ int mk_put(mk_t *mk, const char *key, const char *value) {//todo
     node->next = mk->buckets[idx];
     mk->buckets[idx] = node;
     mk->count++;
-
+    free(validKey);
     return 0;
 }
 
@@ -147,6 +163,10 @@ int mk_del(mk_t *mk, const char *key) {
 
     // 去除key两边的空格
     char * validKey=mk_trim(key);
+    if (validKey == NULL) {
+        perror("mk_del 内存分配失败");
+        return -1;
+    }
     size_t idx = mk_hash(validKey);
     mk_node_t *prev = NULL;
     mk_node_t *curr = mk->buckets[idx];
@@ -166,6 +186,7 @@ int mk_del(mk_t *mk, const char *key) {
             free(curr);
             mk->count--;
             printf("%s 删除成功 ✅\n",validKey);
+            free(validKey);
             return 0;
         }
         prev = curr;
@@ -174,6 +195,7 @@ int mk_del(mk_t *mk, const char *key) {
 
     // key不存在
     fprintf(stderr, "键 %s 不存在 ❌\n",validKey);
+    free(validKey);
     return -1;
 }
 
@@ -196,7 +218,11 @@ int mk_load(mk_t *mk, const char *filepath) {
     }
 
     //mk中所有数据清空
-    mk_destroy(mk);
+    for(int i=0;i<MK_HASH_SIZE;i++){
+        mk_destroy_chain(mk->buckets[i]);
+        mk->buckets[i]=NULL;
+    }
+    mk->count=0;
 
     char line[4096];
     int line_num = 0;
@@ -225,8 +251,8 @@ int mk_load(mk_t *mk, const char *filepath) {
                     return ret;
                     
                 }
-                key="";
-                value="";//清空，准备下一次循环
+                free(key);
+                free(value);//mk_parse_line中让局部变量指向了堆地址
                 break;
             case -1: // 空行/注释，跳过
                

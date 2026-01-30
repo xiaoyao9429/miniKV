@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-
+#include <ctype.h>
 
 // 校验key合法性
 int mk_is_valid_key(const char *key) {
@@ -56,8 +56,8 @@ char* mk_trim(const char *str) {
     const char *start = str;
     const char *end = str + strlen(str) - 1;
 
-    // 跳过首部空格
-    while (*start == ' ' && *start != '\0') {
+    // 跳过首部空白
+    while (isspace((unsigned char)*start) && *start != '\0') {
         start++;
     }
 
@@ -66,8 +66,8 @@ char* mk_trim(const char *str) {
         return NULL;
     }
 
-    // 跳过尾部空格
-    while (end > start && *end == ' ') {
+    // 跳过尾部空白
+    while (end > start && isspace((unsigned char)*end)) {
         end--;
     }
 
@@ -96,7 +96,7 @@ int mk_parse_line(const char *line, char **key, char **value) {
     char *trimmed_line = mk_trim(line);
     if (trimmed_line == NULL) {
 
-        perror("mk_parse_line 无效的空行");
+        //perror("mk_parse_line 无效的空行");
         return -1;
     }
 

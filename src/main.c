@@ -1,165 +1,121 @@
 #include "../include/minikv.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-// 阶段性测试主函数
+#define MAX_CMD_LEN 1024
+
+// 打印帮助信息
+void print_help() {
+    printf("Commands:\n");
+    printf("  get <key>          - Get value by key\n");
+    printf("  put <key> <value>  - Set key-value pair\n");
+    printf("  del <key>          - Delete key\n");
+    printf("  save <file>        - Save MiniKV data to file\n");
+    printf("  load <file>        - Load MiniKV data from file\n");
+    printf("  list               - List all keys\n");
+    printf("  help               - Show this help\n");
+    printf("  quit / exit        - Exit program\n");
+}
+
 int main() {
-    printf("===== MiniKV 阶段性测试开始 =====\n\n");
-    //=================== 创建实例 ====================
-    printf("【创建Hash表测试】\n");
     mk_t *mk = mk_create();
     if (mk == NULL) {
-        fprintf(stderr, "错误：Hash表创建失败\n");
+        fprintf(stderr, "Failed to initialize MiniKV\n");
         return 1;
     }
-    printf("✅ 创建Hash表创建成功\n");
-    printf("\n");
 
-    // ====================  基础put测试  ====================
-    printf("【基础put测试】\n");
-   
-    // 测试合法key的put
-              mk_put(mk, "   test_key1    ", "test_value1");
-              mk_put(mk, "test_key2    ", "test_value2");
-              mk_put(mk, "test_key3", "test_value3");
-              mk_put(mk, "test_key4", "   test_value4   ");
-              mk_put(mk, "test_key5", "  test_va lue5");
-    int ret = mk_put(mk, "test_key6", "test_va lue6");
-    if (ret == 0) {
-        printf("✅ mk_put 成功\n");
-        printf("\n");
-    } else {
-        fprintf(stderr, "mk_put失败❌\n");
+    printf("MiniKV Interactive Shell\n");
+    printf("Type 'help' for commands.\n");
+
+    char line[MAX_CMD_LEN];
+    while (1) {
+        printf("minikv> ");
+        //从标准输入中读取一行命令
+        if (fgets(line, sizeof(line), stdin) == NULL) {
+            break; // EOF
+        }
+
+        // 去除行尾换行符
+        line[strcspn(line, "\n")] = 0;
+
+        // 输入回车继续
+        if (strlen(line) == 0) continue;
+
+        //分割出要执行的命令
+        char *cmd = strtok(line, " ");
+
+        // 忽略空命令
+        if (cmd == NULL) continue;
+
+
+        //输入quit或exit退出工具
+        if (strcmp(cmd, "quit") == 0 || strcmp(cmd, "exit") == 0) {
+            break;
+        } else if (strcmp(cmd, "help") == 0) {//输入help显示帮助信息
+            print_help();
+        } else if (strcmp(cmd, "put") == 0) {//如果是put命令 设置键值对
+            char *key = strtok(NULL, " ");
+            char *value = strtok(NULL, ""); // 分割出key和value
+            
+            if (key && value) {//如果key和value都不为空
+                 // 去除 value 前导空格
+                while(*value == ' ') value++;
+               
+                
+                if (mk_put(mk, key, value) == 0) {
+                    printf("OK\n");
+                }
+            } else {
+                printf("Usage: put <key> <value>\n");
+            }
+        } else if (strcmp(cmd, "get") == 0) {//如果是get命令 获取键对应的值
+            char *key = strtok(NULL, " ");
+            if (key) {
+                const char *val = mk_get(mk, key);
+                if (val) {
+                    printf("%s\n", val);
+                } else {
+                    printf("\n");
+                }
+            } else {
+                printf("Usage: get <key>\n");
+            }
+        } else if (strcmp(cmd, "del") == 0) {//如果是del命令 删除键值对
+            char *key = strtok(NULL, " ");
+            if (key) {
+                if (mk_del(mk, key) == 0) {
+                    //删除成功，mk_del内部会输出信息
+                }
+            } else {
+                printf("Usage: del <key>\n");
+            }
+        } else if (strcmp(cmd, "save") == 0) {//如果是save命令 保存MiniKV数据到文件
+            char *file = strtok(NULL, " ");
+            if (file) {
+                if (mk_save(mk, file) == 0) {
+                    printf("成功将信息保存到%s中\n", file);
+                }
+            } else {
+                printf("Usage: save <file>\n");
+            }
+        } else if (strcmp(cmd, "load") == 0) {//如果是load命令 从文件加载MiniKV数据
+            char *file = strtok(NULL, " ");
+            if (file) {
+                if (mk_load(mk, file) == 0) {
+                    printf("已从%s中加载信息\n", file);
+                }
+            } else {
+                printf("Usage: load <file>\n");
+            }
+        } else if (strcmp(cmd, "list") == 0) {//如果是list命令 列出所有键值对
+            mk_print(mk);
+        } else {
+            printf("未知的命令: %s\n", cmd);
+        }
     }
 
-    // // 测试get
-    printf("【基础get测试】\n");
-    const char *val1 = mk_get(mk, "test_key1");
-    const char *val2 = mk_get(mk, "  test_key2  ");
-    const char *val3 = mk_get(mk, "  test_key3");
-    const char *val4 = mk_get(mk, "  test_key4");
-    const char *val5 = mk_get(mk, "  test_key5");
-    const char *val6 = mk_get(mk, "  test_key6  ");
-    
-    printf("%s ✅\n", val1);
-    printf("%s ✅\n", val2);
-    printf("%s ✅\n", val3);
-    printf("%s ✅\n", val4);
-    printf("%s ✅\n", val5);
-    printf("%s ✅\n", val6);
-    printf("\n");
-   
-
-     // 测试put覆盖
-    printf("【put覆盖测试】\n");
-    ret = mk_put(mk, "test_key1", "new_value1111");
-    ret = mk_put(mk, "test_key2", "new_value2222");
-    ret = mk_put(mk, "test_key3", "new_value3333");
-
-    printf("【遍历输出所有键值对】\n");
-    ret = mk_print(mk);
-    if (ret != 0) {
-        fprintf(stderr, "遍历输出失败❌\n");
-    }
-    printf("\n");
-   
-
-    // // 测试非法key
-    printf("【非法key测试】\n");
-    ret = mk_put(mk, "invalid*key", "123");
-    ret = mk_put(mk, "invalid   key", "123");
-    ret = mk_put(mk, "invalid (()))key", "123");
-    ret = mk_put(mk, "中文", "123");
-    ret = mk_put(mk, "      ", "123");
-    ret = mk_put(mk, "", "123");
-    if (ret == -1) {
-       
-    } else {
-        fprintf(stderr, "非法key检验失败\n") ;
-    }
-    printf("\n");
-
- // ==================== 遍历输出测试 ====================
-   
-    printf("【遍历输出所有键值对】\n");
-    ret = mk_print(mk);
-    if (ret != 0) {
-        fprintf(stderr, "遍历输出失败❌\n");
-    }
-    printf("\n");
-
-    // ====================  删除测试  ====================
-    // 删除存在的key
-    printf("【删除测试】 \n");
-    ret = mk_del(mk, "   test_key1   ");
-    ret = mk_del(mk, "   test_key2   ");
-    ret = mk_del(mk, "test_key3   ");
-
-    printf("\n");
-
-
-     printf("【遍历输出所有键值对】\n");
-    ret = mk_print(mk);
-    if (ret != 0) {
-        fprintf(stderr, "遍历输出失败❌\n");
-    }
-    printf("\n");
-    
-
-    // 删除不存在的key
-    ret = mk_del(mk, "nonexist_key1");
-    ret = mk_del(mk, "nonexist_key2");
-    ret = mk_del(mk, "nonexist_key3");
-    ret = mk_del(mk, "");
-    ret = mk_del(mk, "fsdf*****");
-    ret = mk_del(mk, "    中文 ");
-    printf("\n");
-
-
-    
-
-    // ==================== 保存到文件测试 ====================
-    printf("【文件加载测试】\n");
-    ret = mk_save(mk, "../tests/minikv01.txt");
-    if (ret == 0) {
-        printf("保存成功 ✅\n");
-    } else {
-        fprintf(stderr, "文件保存失败 ❌\n");
-    }
-
-    printf("\n");
-
-    // ==================== 从文件中加载测试 ====================
-    printf("【从文件加载测试】\n");
-    ret = mk_load(mk, "../tests/test01.txt");
-    if (ret == 0) {
-        printf("加载成功 ✅\n");
-    } else {
-        fprintf(stderr, "文件加载失败 ❌\n");
-    }
-    printf("\n");
-
-    // ==================== 遍历输出测试 ====================
-   
-    printf("【遍历输出所有键值对】\n");
-    ret = mk_print(mk);
-    if (ret != 0) {
-        fprintf(stderr, "遍历输出失败❌\n");
-    }
-    printf("\n");
-
-
-   
-   
-   
-    // ==================== 销毁Hash表 ====================
-    printf("【阶段6】Hash表销毁\n");
-    int destroy_ret = mk_destroy(mk);
-    if(destroy_ret==0){
-        printf("✅ Hash表销毁成功\n");
-    }else{
-        fprintf(stderr, "❌ Hash表销毁失败，错误码：%d\n", destroy_ret);
-    }
-    printf("\n===== MiniKV 阶段性测试结束 =====\n");
+    mk_destroy(mk);
+    printf("Bye.\n");
     return 0;
 }
