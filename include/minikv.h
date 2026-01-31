@@ -6,9 +6,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-// 哈希桶大小（简易哈希表，链表法解决冲突）
-#define MK_HASH_SIZE 1024
 
+#define MK_HASH_SIZE 1024// 哈希桶大小（简易哈希表，链表法解决冲突）
+#define MAX_CMD_LEN 1024// 最大命令行长度
 // 键值对节点（哈希表桶的链表节点）
 typedef struct mk_node {
     char *key;                  // 键（动态分配）
@@ -36,5 +36,5 @@ char* mk_trim(const char *str);//去除字符串首尾空白字符，返回新�
 int mk_is_valid_key(const char *key);//检查key是否合法，合法返回0，非法返回-1
 int mk_parse_line(const char *line, char **key, char **value);//将读到的一行拆分为键值对
 int mk_print(const mk_t *mk);//打印Hash表中的所有键值对
-
+int start_minikv(void);//启动函数
 #endif
