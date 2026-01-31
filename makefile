@@ -28,7 +28,7 @@ DYNAMIC_LIB = $(LIB_DIR)/lib$(LIB_NAME).so
 
 
 # .PHONY 声明伪目标
-.PHONY: all clean
+.PHONY: all clean test
 
 
 
@@ -57,7 +57,21 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 
+# 测试相关设置
+TEST_DIR = tests
+TEST_BIN = test_minikv
+TEST_SRCS = $(TEST_DIR)/test_minikv.c
+TEST_LIBS = -lcunit
+
+# 编译测试程序
+$(TEST_BIN): $(LIB_OBJS) $(TEST_SRCS)
+	$(CC) $^ $(CFLAGS) -o $@ $(TEST_LIBS)
+
+# 执行单元测试
+test: $(TEST_BIN)
+	@./$(TEST_BIN)
+
 # 用于删除所有编译生成的文件
 clean:
-	rm -rf $(OBJ_DIR) $(BIN) $(LIB_DIR)
+	rm -rf $(OBJ_DIR) $(BIN) $(LIB_DIR) $(TEST_BIN) tests/test_save.txt
 

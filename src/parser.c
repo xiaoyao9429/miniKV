@@ -54,7 +54,6 @@ char* mk_trim(const char *str) {
     }
 
     const char *start = str;
-    const char *end = str + strlen(str) - 1;
 
     // 跳过首部空白
     while (isspace((unsigned char)*start) && *start != '\0') {
@@ -66,13 +65,18 @@ char* mk_trim(const char *str) {
         return NULL;
     }
 
-    // 跳过尾部空白
-    while (end > start && isspace((unsigned char)*end)) {
-        end--;
+    // 找到最后一个非空白字符
+    const char *end = start;
+    const char *p = start;
+    while (*p != '\0') {
+        if (!isspace((unsigned char)*p)) {
+            end = p;
+        }
+        p++;
     }
 
     // 计算新字符串长度，分配内存
-    int len = end - start + 1;
+    size_t len = end - start + 1;
     char *result = (char *)malloc(len + 1);  // +1 存结束符
     if (result == NULL) {
         return NULL;  // 内存分配失败
@@ -87,30 +91,37 @@ char* mk_trim(const char *str) {
 
 
 int mk_parse_line(const char *line, char **key, char **value) {
+    // 参数检查
     if (line == NULL || key == NULL || value == NULL) {
         perror("mk_parse_line 参数无效");
         return -1;
-
     }
+    
+    // 确保key和value指针初始化为NULL
+    *key = NULL;
+    *value = NULL;
+    
     // 第一步：trim整行
     char *trimmed_line = mk_trim(line);
     if (trimmed_line == NULL) {
-
-        //perror("mk_parse_line 无效的空行");
         return -1;
     }
 
     //注释行
     if ( *trimmed_line == '#' || *trimmed_line == ';') {
         free(trimmed_line);
-        return 1;
+        *key = NULL;
+        *value = NULL;
+        return -1;
     }
 
     // 第二步：找第一个=作为分隔符（处理多=号场景）
     char *eq_pos = strchr(trimmed_line, '=');
     if (eq_pos == NULL) { // 无=号，解析失败
         free(trimmed_line);
-       // fprintf(stderr, "mk_parse_line 非键值对格式\n");
+        // 确保key和value指针被设置为NULL
+        *key = NULL;
+        *value = NULL;
         return -1;
     }
 
@@ -121,13 +132,37 @@ int mk_parse_line(const char *line, char **key, char **value) {
 
     free(trimmed_line);
 
+    // 处理key为全空格的情况
+    if (trimmed_key == NULL) {
+        // 全空格的key视为无效
+        // 只有当trimmed_value不为NULL时才释放
+        if (trimmed_value != NULL) {
+            free(trimmed_value);
+        }
+        *key = NULL;
+        *value = NULL;
+        return -1;
+    }
+
+    // 处理value为全空格的情况，视为空字符串
+    if (trimmed_value == NULL) {
+        trimmed_value = (char *)malloc(1);
+        if (trimmed_value == NULL) {
+            free(trimmed_key);
+            *key = NULL;
+            *value = NULL;
+            return -1;
+        }
+        trimmed_value[0] = '\0';
+    }
+
     // 校验key合法性
     if (mk_is_valid_key(trimmed_key)!=0) {
-
-        //fprintf(stderr, "mk_parse_line 无效的key:%s\n",trimmed_key);
+        // 释放已分配的内存
         free(trimmed_key);
         free(trimmed_value);
-      
+        *key = NULL;
+        *value = NULL;
         return -1;
     }
 
