@@ -10,6 +10,10 @@ OBJ_DIR = obj
 LIB_DIR = lib
 # BIN: 最终生成的可执行文件名称
 BIN = minikv
+# CLI_RUN: 启动minikv
+CLI_RUN = minikvS
+
+
 # 库名称
 LIB_NAME = minikv
 # SRCS: 手动列出需要编译的源文件列表
@@ -41,6 +45,10 @@ all: $(BIN) $(STATIC_LIB) $(DYNAMIC_LIB)
 $(BIN): $(OBJS)
 	$(CC) $^ $(CFLAGS) -o $@ 
 
+# 运行 miniKV
+$(CLI_RUN): $(BIN)
+	@./$(BIN)
+
 # 静态库构建规则
 $(STATIC_LIB): $(LIB_OBJS)
 	@mkdir -p $(LIB_DIR)
@@ -55,6 +63,8 @@ $(DYNAMIC_LIB): $(LIB_OBJS)
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(OBJ_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
+
+
 
 
 # 测试相关设置

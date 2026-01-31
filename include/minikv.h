@@ -17,6 +17,12 @@ typedef struct mk_node {
 } mk_node_t;
 
 
+// 键值对结构体，用于排序
+typedef struct {
+    char *key;
+    char *value;
+} kv_pair_t;
+
 // 存储数据的Hash表
 typedef struct {
     mk_node_t *buckets[MK_HASH_SIZE];  // 哈希桶数组
@@ -36,5 +42,7 @@ char* mk_trim(const char *str);//去除字符串首尾空白字符，返回新�
 int mk_is_valid_key(const char *key);//检查key是否合法，合法返回0，非法返回-1
 int mk_parse_line(const char *line, char **key, char **value);//将读到的一行拆分为键值对
 int mk_print(const mk_t *mk);//打印Hash表中的所有键值对
+int mk_asc_print(const mk_t *mk);//按key升序打印Hash表中的所有键值对
+int mk_desc_print(const mk_t *mk);//按key降序打印Hash表中的所有键值对
 int start_minikv(void);//启动函数
 #endif

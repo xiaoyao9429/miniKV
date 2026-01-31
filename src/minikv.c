@@ -334,6 +334,128 @@ int mk_print(const mk_t *mk){
 }
 
 
+
+// 比较函数，用于qsort升序排序
+int compare_kv_asc(const void *a, const void *b) {
+    const kv_pair_t *pair1 = (const kv_pair_t *)a;
+    const kv_pair_t *pair2 = (const kv_pair_t *)b;
+    return strcmp(pair1->key, pair2->key);
+}
+
+// 比较函数，用于qsort降序排序
+int compare_kv_desc(const void *a, const void *b) {
+    const kv_pair_t *pair1 = (const kv_pair_t *)a;
+    const kv_pair_t *pair2 = (const kv_pair_t *)b;
+    return strcmp(pair2->key, pair1->key);
+}
+
+// 按key升序打印Hash表中的所有键值对
+int mk_asc_print(const mk_t *mk) {
+    if (mk == NULL) {
+        perror("无效的参数");
+        return -1;
+    }
+
+    size_t count = mk_count(mk);
+    printf("===== MiniKV Key-Value List (total: %zu) =====\n", count);
+
+    if (count == 0) {
+        printf("Hash表中无数据\n");
+        printf("=============================================\n");
+        return 0;
+    }
+
+    // 收集所有键值对
+    kv_pair_t *pairs = (kv_pair_t *)malloc(count * sizeof(kv_pair_t));
+    if (pairs == NULL) {
+        perror("内存分配失败");
+        return -1;
+    }
+
+    size_t idx = 0;
+    // 遍历所有哈希桶，收集键值对
+    for (int bucket_idx = 0; bucket_idx < MK_HASH_SIZE; bucket_idx++) {
+        mk_node_t *node = mk->buckets[bucket_idx];
+        while (node != NULL) {
+            pairs[idx].key = node->key;
+            pairs[idx].value = node->value;
+            idx++;
+            node = node->next;
+        }
+    }
+
+    // 按key升序排序
+    qsort(pairs, count, sizeof(kv_pair_t), compare_kv_asc);
+
+    // 打印排序后的键值对
+    for (size_t i = 0; i < count; i++) {
+        printf("%s = %s ✅\n", pairs[i].key, pairs[i].value);
+    }
+
+    // 释放临时数组
+    free(pairs);
+
+    printf("一共输出了%zu个键值对\n", count);
+    printf("输出成功✅\n");
+    printf("=============================================\n");
+
+    return 0;
+}
+
+// 按key降序打印Hash表中的所有键值对
+int mk_desc_print(const mk_t *mk) {
+    if (mk == NULL) {
+        perror("无效的参数");
+        return -1;
+    }
+
+    size_t count = mk_count(mk);
+    printf("===== MiniKV Key-Value List (total: %zu) =====\n", count);
+
+    if (count == 0) {
+        printf("Hash表中无数据\n");
+        printf("=============================================\n");
+        return 0;
+    }
+
+    // 收集所有键值对
+    kv_pair_t *pairs = (kv_pair_t *)malloc(count * sizeof(kv_pair_t));
+    if (pairs == NULL) {
+        perror("内存分配失败");
+        return -1;
+    }
+
+    size_t idx = 0;
+    // 遍历所有哈希桶，收集键值对
+    for (int bucket_idx = 0; bucket_idx < MK_HASH_SIZE; bucket_idx++) {
+        mk_node_t *node = mk->buckets[bucket_idx];
+        while (node != NULL) {
+            pairs[idx].key = node->key;
+            pairs[idx].value = node->value;
+            idx++;
+            node = node->next;
+        }
+    }
+
+    // 按key降序排序
+    qsort(pairs, count, sizeof(kv_pair_t), compare_kv_desc);
+
+    // 打印排序后的键值对
+    for (size_t i = 0; i < count; i++) {
+        printf("%s = %s ✅\n", pairs[i].key, pairs[i].value);
+    }
+
+    // 释放临时数组
+    free(pairs);
+
+    printf("一共输出了%zu个键值对\n", count);
+    printf("输出成功✅\n");
+    printf("=============================================\n");
+
+    return 0;
+}
+
+
 // 启动函数
 int start_minikv(void) {
     mk_t *mk = mk_create();
@@ -377,7 +499,7 @@ int start_minikv(void) {
             printf("  del <key>          - Delete key\n");
             printf("  save <file>        - Save MiniKV data to file\n");
             printf("  load <file>        - Load MiniKV data from file\n");
-            printf("  list               - List all keys\n");
+            printf("  list [-asc|-desc]  - List all keys\n");
             printf("  help               - Show this help\n");
             printf("  quit / exit        - Exit program\n");
         } else if (strcmp(cmd, "put") == 0) {//put指令 用于设置key和value
@@ -435,7 +557,20 @@ int start_minikv(void) {
                 printf("Usage: load <file>\n");
             }
         } else if (strcmp(cmd, "list") == 0) {//list指令 用于打印Hash表中所有键值对
-            mk_print(mk);
+            char *arg = strtok(NULL, " ");
+            if (arg == NULL) {
+                // 没有参数，使用默认打印
+                mk_print(mk);
+            } else if (strcmp(arg, "-asc") == 0) {
+                // 升序打印
+                mk_asc_print(mk);
+            } else if (strcmp(arg, "-desc") == 0) {
+                // 降序打印
+                mk_desc_print(mk);
+            } else {
+                printf("未知的list命令参数: %s\n", arg);
+                printf("Usage: list [-asc|-desc]\n");
+            }
         } else {
             printf("未知的命令: %s\n", cmd);
         }
